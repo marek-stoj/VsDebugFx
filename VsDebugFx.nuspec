@@ -2,14 +2,14 @@
 <package >
   <metadata>
     <id>VsDebugFx</id>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <authors>Marek Stój</authors>
     <owners>Immortal</owners>
     <projectUrl>https://github.com/marek-stoj/VsDebugFx</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>VsDebugFx provides weakly typed lambda expressions and LINQ in Visual Studio debugger watches.</description>
     <copyright>Copyright 2012</copyright>
-    <tags>VisualStudio debug C# linq</tags>
+    <tags>C# VisualStudio debug watch LINQ lambda expressions</tags>
     <dependencies>
       <dependency id="Roslyn.Compilers.Common" />
       <dependency id="Roslyn.Compilers.CSharp" />

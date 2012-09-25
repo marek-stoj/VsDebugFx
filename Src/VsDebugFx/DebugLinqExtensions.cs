@@ -2,325 +2,410 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Roslyn.Scripting;
-using Roslyn.Scripting.CSharp;
+using VsDebugFx;
 
-namespace VsDebugFx
+public static class DebugLinqExtensions
 {
-  public static class DebugLinqExtensions
+  #region Public methods
+
+  public static List<object> SelectFx<TSource>(this IEnumerable<TSource> source, string selectorExpression)
   {
-    private static readonly Regex _SingleQuoteRegex = new Regex(@"(?<!')'(?!')", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex _TwoSingleQuotesRegex = new Regex(@"''", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    #region Public methods
-
-    public static IEnumerable<object> SelectEx<TSource>(this IEnumerable<TSource> source, string selectorExpression)
+    if (source == null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(selectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "selectorExpression");
-      }
-
-      selectorExpression = PreprocessPredicateExpression(selectorExpression);
-
-      Session session = CreateSession();
-
-      Exception exception;
-
-      Func<TSource, object> selector =
-        TryExecute<Func<TSource, object>>(selectorExpression, session, out exception);
-
-      if (selector != null)
-      {
-        return source.Select(selector);
-      }
-
-      throw new ArgumentException(string.Format("Couldn't parse selector expression ('{0}') as Func<T, object>. TSource: '{1}'.", selectorExpression, typeof(TSource)), "selectorExpression", exception);
+      throw new ArgumentNullException("source");
     }
 
-    public static IEnumerable<TSource> WhereEx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+    if (string.IsNullOrEmpty(selectorExpression))
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(predicateExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
-      }
-
-      predicateExpression = PreprocessPredicateExpression(predicateExpression);
-
-      Session session = CreateSession();
-
-      Exception exception;
-
-      Func<TSource, bool> predicate =
-        TryExecute<Func<TSource, bool>>(predicateExpression, session, out exception);
-
-      if (predicate != null)
-      {
-        return source.Where(predicate);
-      }
-
-      Func<TSource, int, bool> predicateWithIndex =
-        TryExecute<Func<TSource, int, bool>>(predicateExpression, session, out exception);
-
-      if (predicateWithIndex != null)
-      {
-        return source.Where(predicateWithIndex);
-      }
-
-      throw new ArgumentException(string.Format("Couldn't parse predicate expression ('{0}') as neither Func<T, bool> nor Func<T, int, bool>. TSource: '{1}'.", predicateExpression, typeof(TSource)), "predicateExpression", exception);
+      throw new ArgumentException("Argument can't be null nor empty.", "selectorExpression");
     }
 
-    public static IEnumerable<TSource> OrderByEx<TSource, TKey>(this IEnumerable<TSource> source, string keySelectorExpression)
+    selectorExpression = CodeUtils.PreprocessCode(selectorExpression);
+
+    Session session = RoslynUtils.CreateSession();
+
+    Exception exception;
+
+    Func<TSource, object> selector =
+      TryExecute<Func<TSource, object>>(selectorExpression, session, out exception);
+
+    if (selector != null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      return DoOrderByEx(source, keySelectorExpression, typeof(TKey));
+      return source.Select(selector).ToList();
     }
 
-    public static IEnumerable<TSource> OrderByEx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+    throw new ArgumentException(string.Format("Couldn't parse selector expression ('{0}') as Func<T, object>. TSource: '{1}'.", selectorExpression, typeof(TSource)), "selectorExpression", exception);
+  }
+
+  public static List<TKey> SelectFx<TSource, TKey>(this IEnumerable<TSource> source, string selectorExpression)
+  {
+    if (source == null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      if (keyType == null)
-      {
-        throw new ArgumentNullException("keyType");
-      }
-
-      return DoOrderByEx(source, keySelectorExpression, keyType);
+      throw new ArgumentNullException("source");
     }
 
-    public static IEnumerable<TSource> OrderByEx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, object keyTypeIndicator)
+    if (string.IsNullOrEmpty(selectorExpression))
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      if (keyTypeIndicator == null)
-      {
-        throw new ArgumentNullException("keyTypeIndicator");
-      }
-
-      return DoOrderByEx(source, keySelectorExpression, keyTypeIndicator.GetType());
+      throw new ArgumentException("Argument can't be null nor empty.", "selectorExpression");
     }
 
-    public static IEnumerable<TSource> OrderByDescendingEx<TSource, TKey>(this IEnumerable<TSource> source, string keySelectorExpression)
+    return source.SelectFx(selectorExpression).Cast<TKey>().ToList();
+  }
+
+  public static List<TSource> WhereFx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+  {
+    if (source == null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      return
-        DoOrderByEx(source, keySelectorExpression, typeof(TKey))
-          .Reverse();
+      throw new ArgumentNullException("source");
     }
 
-    public static IEnumerable<TSource> OrderByDescendingEx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+    if (string.IsNullOrEmpty(predicateExpression))
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      if (keyType == null)
-      {
-        throw new ArgumentNullException("keyType");
-      }
-
-      return
-        DoOrderByEx(source, keySelectorExpression, keyType)
-          .Reverse();
+      throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
     }
 
-    public static IEnumerable<TSource> OrderByDescendingEx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, object keyTypeIndicator)
+    predicateExpression = CodeUtils.PreprocessCode(predicateExpression);
+
+    Session session = RoslynUtils.CreateSession();
+
+    Exception exception;
+
+    Func<TSource, bool> predicate =
+      TryExecute<Func<TSource, bool>>(predicateExpression, session, out exception);
+
+    if (predicate != null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      if (keyTypeIndicator == null)
-      {
-        throw new ArgumentNullException("keyTypeIndicator");
-      }
-
-      return
-        DoOrderByEx(source, keySelectorExpression, keyTypeIndicator.GetType())
-          .Reverse();
+      return source.Where(predicate).ToList();
     }
 
-    #endregion
+    Func<TSource, int, bool> predicateWithIndex =
+      TryExecute<Func<TSource, int, bool>>(predicateExpression, session, out exception);
 
-    #region Private methods
-
-    private static IEnumerable<TSource> DoOrderByEx<TSource>(IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+    if (predicateWithIndex != null)
     {
-      if (source == null)
-      {
-        throw new ArgumentNullException("source");
-      }
-
-      if (string.IsNullOrEmpty(keySelectorExpression))
-      {
-        throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
-      }
-
-      if (keyType == null)
-      {
-        throw new ArgumentNullException("keyType");
-      }
-
-      keySelectorExpression = PreprocessPredicateExpression(keySelectorExpression);
-
-      Session session = CreateSession();
-      Type keySelectorType = CreateFuncType2(typeof(TSource), keyType);
-      Exception exception;
-
-      object keySelector =
-        TryExecute(keySelectorExpression, session, keySelectorType, out exception);
-
-      if (keySelector != null && keySelectorType.IsInstanceOfType(keySelector))
-      {
-        return InvokeOrderBy(keyType, source, keySelector);
-      }
-
-      throw new ArgumentException(string.Format("Couldn't parse key selector expression ('{0}') as Func<TSource, TKey>. TSource: '{1}'. TKey: '{2}'.", keySelectorExpression, typeof(TSource), keyType), "keySelectorExpression");
+      return source.Where(predicateWithIndex).ToList();
     }
 
-    private static IOrderedEnumerable<TSource> InvokeOrderBy<TSource>(Type keyType, IEnumerable<TSource> source, object keySelector)
+    throw new ArgumentException(string.Format("Couldn't parse predicate expression ('{0}') as neither Func<T, bool> nor Func<T, int, bool>. TSource: '{1}'.", predicateExpression, typeof(TSource)), "predicateExpression", exception);
+  }
+
+  public static List<TSource> OrderByFx<TSource, TKey>(this IEnumerable<TSource> source, string keySelectorExpression)
+  {
+    if (source == null)
     {
-      Type sourceType = typeof(TSource);
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    return DoOrderByFx(source, keySelectorExpression, typeof(TKey)).ToList();
+  }
+
+  public static List<TSource> OrderByFx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    if (keyType == null)
+    {
+      throw new ArgumentNullException("keyType");
+    }
+
+    return DoOrderByFx(source, keySelectorExpression, keyType).ToList();
+  }
+
+  public static List<TSource> OrderByFx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, object keyTypeIndicator)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    if (keyTypeIndicator == null)
+    {
+      throw new ArgumentNullException("keyTypeIndicator");
+    }
+
+    return DoOrderByFx(source, keySelectorExpression, keyTypeIndicator.GetType()).ToList();
+  }
+
+  public static List<TSource> OrderByDescendingFx<TSource, TKey>(this IEnumerable<TSource> source, string keySelectorExpression)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    return
+      DoOrderByFx(source, keySelectorExpression, typeof(TKey))
+        .Reverse()
+        .ToList();
+  }
+
+  public static List<TSource> OrderByDescendingFx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    if (keyType == null)
+    {
+      throw new ArgumentNullException("keyType");
+    }
+
+    return
+      DoOrderByFx(source, keySelectorExpression, keyType)
+        .Reverse()
+        .ToList();
+  }
+
+  public static List<TSource> OrderByDescendingFx<TSource>(this IEnumerable<TSource> source, string keySelectorExpression, object keyTypeIndicator)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    if (keyTypeIndicator == null)
+    {
+      throw new ArgumentNullException("keyTypeIndicator");
+    }
+
+    return
+      DoOrderByFx(source, keySelectorExpression, keyTypeIndicator.GetType())
+        .Reverse()
+        .ToList();
+  }
+
+  public static TSource FirstFx<TSource>(this IEnumerable<TSource> source)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    return source.First();
+  }
+
+  public static TSource FirstFx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(predicateExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
+    }
+
+    return source.WhereFx(predicateExpression).First();
+  }
+
+  public static TSource FirstOrDefaultFx<TSource>(this IEnumerable<TSource> source)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    return source.FirstOrDefault();
+  }
+
+  public static TSource FirstOrDefaultFx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(predicateExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
+    }
+
+    return source.WhereFx(predicateExpression).FirstOrDefault();
+  }
+
+  public static TSource SingleFx<TSource>(this IEnumerable<TSource> source)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    return source.Single();
+  }
+
+  public static TSource SingleFx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(predicateExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
+    }
+
+    return source.WhereFx(predicateExpression).Single();
+  }
+
+  public static TSource SingleOrDefaultFx<TSource>(this IEnumerable<TSource> source)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    return source.SingleOrDefault();
+  }
+
+  public static TSource SingleOrDefaultFx<TSource>(this IEnumerable<TSource> source, string predicateExpression)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(predicateExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "predicateExpression");
+    }
+
+    return source.WhereFx(predicateExpression).SingleOrDefault();
+  }
+
+  #endregion
+
+  #region Private methods
+
+  private static IEnumerable<TSource> DoOrderByFx<TSource>(IEnumerable<TSource> source, string keySelectorExpression, Type keyType)
+  {
+    if (source == null)
+    {
+      throw new ArgumentNullException("source");
+    }
+
+    if (string.IsNullOrEmpty(keySelectorExpression))
+    {
+      throw new ArgumentException("Argument can't be null nor empty.", "keySelectorExpression");
+    }
+
+    if (keyType == null)
+    {
+      throw new ArgumentNullException("keyType");
+    }
+
+    keySelectorExpression = CodeUtils.PreprocessCode(keySelectorExpression);
+
+    Session session = RoslynUtils.CreateSession();
+    Type keySelectorType = ReflectionUtils.CreateFuncType2(typeof(TSource), keyType);
+    Exception exception;
+
+    object keySelector =
+      TryExecute(keySelectorExpression, session, keySelectorType, out exception);
+
+    if (keySelector != null && keySelectorType.IsInstanceOfType(keySelector))
+    {
+      return InvokeOrderBy(keyType, source, keySelector);
+    }
+
+    throw new ArgumentException(string.Format("Couldn't parse key selector expression ('{0}') as Func<TSource, TKey>. TSource: '{1}'. TKey: '{2}'.", keySelectorExpression, typeof(TSource), keyType), "keySelectorExpression");
+  }
+
+  private static IOrderedEnumerable<TSource> InvokeOrderBy<TSource>(Type keyType, IEnumerable<TSource> source, object keySelector)
+  {
+    Type sourceType = typeof(TSource);
+
+    MethodInfo methodDefinition =
+      ReflectionUtils.GetGenericMethodDefinition(
+        typeof(Enumerable),
+        "OrderBy",
+        BindingFlags.Public | BindingFlags.Static,
+        new[] { typeof(IEnumerable<>), typeof(Func<,>) });
+
+    if (methodDefinition == null)
+    {
+      throw new InternalException("Couldn't get OrderBy<TSource, TKey> method using reflection.");
+    }
+
+    MethodInfo method = methodDefinition.MakeGenericMethod(sourceType, keyType);
+
+    return (IOrderedEnumerable<TSource>)method.Invoke(null, new[] { source, keySelector });
+  }
+
+  private static object TryExecute(string code, Session session, Type resultType, out Exception exception)
+  {
+    try
+    {
+      exception = null;
 
       MethodInfo methodDefinition =
-        ReflectionUtils.GetGenericMethodDefinition(
-          typeof(Enumerable),
-          "OrderBy",
-          BindingFlags.Public | BindingFlags.Static,
-          new[] { typeof(IEnumerable<>), typeof(Func<,>) });
+        session.GetType()
+          .GetMethods()
+          .SingleOrDefault(mi => mi.Name == "Execute" && mi.IsGenericMethodDefinition);
 
       if (methodDefinition == null)
       {
-        throw new InternalException("Couldn't get OrderBy<TSource, TKey> method using reflection.");
+        throw new InternalException("Couldn't get Execute<T> method using reflection.");
       }
 
-      MethodInfo method = methodDefinition.MakeGenericMethod(sourceType, keyType);
+      MethodInfo method = methodDefinition.MakeGenericMethod(resultType);
 
-      return (IOrderedEnumerable<TSource>)method.Invoke(null, new[] { source, keySelector });
+      return method.Invoke(session, new object[] { code });
     }
-
-    private static string PreprocessPredicateExpression(string predicateExpression)
+    catch (TargetInvocationException exc)
     {
-      predicateExpression =
-        _SingleQuoteRegex.Replace(predicateExpression, "\"");
+      exception = exc.InnerException ?? exc;
 
-      predicateExpression =
-        _TwoSingleQuotesRegex.Replace(predicateExpression, "'");
-
-      return predicateExpression;
+      return null;
     }
-
-    private static object TryExecute(string predicateExpression, Session session, Type resultType, out Exception exception)
+    catch (Exception exc)
     {
-      try
-      {
-        exception = null;
+      exception = exc;
 
-        MethodInfo methodDefinition =
-          session.GetType()
-            .GetMethods()
-            .SingleOrDefault(mi => mi.Name == "Execute" && mi.IsGenericMethodDefinition);
-
-        if (methodDefinition == null)
-        {
-          throw new InternalException("Couldn't get Execute<T> method using reflection.");
-        }
-
-        MethodInfo method = methodDefinition.MakeGenericMethod(resultType);
-
-        return method.Invoke(session, new object[] { predicateExpression });
-      }
-      catch (TargetInvocationException exc)
-      {
-        exception = exc.InnerException ?? exc;
-
-        return null;
-      }
-      catch (Exception exc)
-      {
-        exception = exc;
-
-        return null;
-      }
+      return null;
     }
-
-    private static T TryExecute<T>(string predicateExpression, Session session, out Exception exception)
-    {
-      return (T)TryExecute(predicateExpression, session, typeof(T), out exception);
-    }
-
-    private static Session CreateSession()
-    {
-      // TODO IMM HI: we have to create script engine every time because otherwise we get "Duplicate type name within an assembly" exception when using anonymous types in string-expressions; see if we can do something about this
-      var scriptEngine = new ScriptEngine();
-
-      Session session = scriptEngine.CreateSession();
-
-      return session;
-    }
-
-    private static Type CreateFuncType2(Type paramType, Type resultType)
-    {
-      return typeof(Func<,>).MakeGenericType(paramType, resultType);
-    }
-
-    #endregion
   }
+
+  private static T TryExecute<T>(string code, Session session, out Exception exception)
+  {
+    return (T)TryExecute(code, session, typeof(T), out exception);
+  }
+
+  #endregion
 }

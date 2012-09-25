@@ -49,7 +49,9 @@
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AssertEx.cs" />
+    <Compile Include="DebugFxTests.cs" />
     <Compile Include="DebugLinqExtensionsTests.cs" />
+    <Compile Include="TestClass.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

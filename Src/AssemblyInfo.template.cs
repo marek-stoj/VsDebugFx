@@ -1,12 +1,12 @@
-using System.Reflection;
+ï»¿using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("VsDebugFx")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Marek Stój")]
+[assembly: AssemblyCompany("Marek StÃ³j")]
 [assembly: AssemblyProduct("VsDebugFx")]
-[assembly: AssemblyCopyright("Copyright ©  2012")]
+[assembly: AssemblyCopyright("Copyright Â©  2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -14,5 +14,5 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("4d8ea3ee-9c19-43b6-a5da-2e4d7923a86d")]
 
-[assembly: AssemblyVersion("1.0.2.0")]
-[assembly: AssemblyFileVersion("1.0.2.0")]
+[assembly: AssemblyVersion("@VsDebugFxVersion@")]
+[assembly: AssemblyFileVersion("@VsDebugFxVersion@")]

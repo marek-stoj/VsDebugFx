@@ -10,20 +10,20 @@ namespace VsDebugFx.Tests
   {
     #region Public methods
 
-    public static void EnumerablesAreEqual<T>(IEnumerable<T> enumerable1, IEnumerable<T> enumerable2)
+    public static void EnumerablesAreEqual<T>(IEnumerable<T> expectedEnumerable, IEnumerable<T> actualEnumerable)
     {
-      if (enumerable1 == null)
+      if (expectedEnumerable == null)
       {
-        throw new ArgumentNullException("enumerable1");
+        throw new ArgumentNullException("expectedEnumerable");
       }
 
-      if (enumerable2 == null)
+      if (actualEnumerable == null)
       {
-        throw new ArgumentNullException("enumerable2");
+        throw new ArgumentNullException("actualEnumerable");
       }
 
-      List<T> list1 = enumerable1.ToList();
-      List<T> list2 = enumerable2.ToList();
+      List<T> list1 = expectedEnumerable.ToList();
+      List<T> list2 = actualEnumerable.ToList();
 
       Assert.AreEqual(list1.Count, list2.Count, "Lists are of different length.");
 
@@ -52,24 +52,24 @@ namespace VsDebugFx.Tests
 
     #region Private methods
 
-    private static bool ObjectsAreEqual(object obj1, object obj2)
+    private static bool ObjectsAreEqual(object expectedObject, object actualObject)
     {
-      if (obj1 == null && obj2 == null)
+      if (expectedObject == null && actualObject == null)
       {
         return true;
       }
 
-      if (obj1 == null || obj2 == null)
+      if (expectedObject == null || actualObject == null)
       {
         return false;
       }
 
-      bool obj1IsAnonymous = obj1.GetType().IsAnonymousType();
-      bool obj2IsAnonymous = obj2.GetType().IsAnonymousType();
+      bool obj1IsAnonymous = expectedObject.GetType().IsAnonymousType();
+      bool obj2IsAnonymous = actualObject.GetType().IsAnonymousType();
 
       if (obj1IsAnonymous && obj2IsAnonymous)
       {
-        return NonNullObjectsOfAnonymousTypeAreEqual(obj1, obj2);
+        return NonNullObjectsOfAnonymousTypeAreEqual(expectedObject, actualObject);
       }
 
       if (obj1IsAnonymous || obj2IsAnonymous)
@@ -77,13 +77,13 @@ namespace VsDebugFx.Tests
         return false;
       }
 
-      return Equals(obj1, obj2);
+      return Equals(expectedObject, actualObject);
     }
 
-    private static bool NonNullObjectsOfAnonymousTypeAreEqual(object obj1, object obj2)
+    private static bool NonNullObjectsOfAnonymousTypeAreEqual(object expectedObject, object actualObject)
     {
-      Type expectedElementType = obj1.GetType();
-      Type actualElementType = obj2.GetType();
+      Type expectedElementType = expectedObject.GetType();
+      Type actualElementType = actualObject.GetType();
       BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
 
       var expectedElementTypePropertyNamesAndTypes =
@@ -113,7 +113,7 @@ namespace VsDebugFx.Tests
         expectedElementTypeProperties
           .All(
             expectedKvp => actualElementTypeProperties.ContainsKey(expectedKvp.Key)
-                           && ObjectsAreEqual(actualElementTypeProperties[expectedKvp.Key].GetValue(obj2), expectedKvp.Value.GetValue(obj1)));
+                        && ObjectsAreEqual(actualElementTypeProperties[expectedKvp.Key].GetValue(actualObject), expectedKvp.Value.GetValue(expectedObject)));
     }
 
     #endregion

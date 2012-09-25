@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <project name="VsDebugFx" default="all">
 
-  <property name="vsdebugfx.version" value="1.0.0.0" />
+  <property name="vsdebugfx.version" value="1.0.2.0" />
   <property name="msbuild.path" value="C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" />
   <property name="git.path" value="C:\Program Files (x86)\Git\bin\git.exe" />
   <property name="nuget.path" value="C:\Programs\NuGet\NuGet.exe" />
@@ -13,7 +13,7 @@
     <foreach item="File" property="filePath">
       <in>
         <items>
-          <include name="Src\**\AssemblyInfo.cs.template" />
+          <include name="Src\**\AssemblyInfo.template.cs" />
         </items>
       </in>
       <do>
@@ -21,7 +21,7 @@
         <copy file="${filePath}" tofile="${path::combine(path::get-directory-name(filePath), 'AssemblyInfo.cs')}" overwrite="true">
           <filterchain>
             <replacetokens>
-              <token key="VsDebugFxVersion" value="${VsDebugFx.version}" />
+              <token key="VsDebugFxVersion" value="${vsdebugfx.version}" />
             </replacetokens>
           </filterchain>
         </copy>

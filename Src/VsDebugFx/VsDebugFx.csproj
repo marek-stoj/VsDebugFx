@@ -53,9 +53,13 @@
     <Compile Include="..\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="CodeUtils.cs" />
+    <Compile Include="Properties\AssemblyInfoLocal.cs" />
     <Compile Include="DebugLinqExtensions.cs" />
     <Compile Include="InternalException.cs" />
     <Compile Include="ReflectionUtils.cs" />
+    <Compile Include="RoslynUtils.cs" />
+    <Compile Include="DebugFx.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

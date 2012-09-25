@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace VsDebugFx
 {
-  public static class ReflectionUtils
+  internal static class ReflectionUtils
   {
     /// <remarks>
     /// Credits go to Jon Skeet (see: http://stackoverflow.com/a/269992/139298).
@@ -17,7 +17,7 @@ namespace VsDebugFx
         throw new ArgumentNullException("declaringType");
       }
 
-      if (string.IsNullOrEmpty(methodName))
+      if (String.IsNullOrEmpty(methodName))
       {
         throw new ArgumentException("Argument can't be null nor empty.", "methodName");
       }
@@ -47,6 +47,11 @@ namespace VsDebugFx
       bool nameContainsAnonymousType = type.FullName != null && type.FullName.Contains("AnonymousType");
       
       return hasCompilerGeneratedAttribute && nameContainsAnonymousType;
+    }
+
+    public static Type CreateFuncType2(Type paramType, Type resultType)
+    {
+      return typeof(Func<,>).MakeGenericType(paramType, resultType);
     }
   }
 }
