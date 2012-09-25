@@ -17,7 +17,7 @@
         </items>
       </in>
       <do>
-        <echo message="Expanding template ${filePath}" />
+        <echo message="Expanding template ${filePath}." />
         <copy file="${filePath}" tofile="${path::combine(path::get-directory-name(filePath), 'AssemblyInfo.cs')}" overwrite="true">
           <filterchain>
             <replacetokens>
@@ -97,6 +97,23 @@
     <delete dir="Bin" />
     <delete dir="Tests" />
     <delete dir="Dist" />
+  </target>
+  
+  <target name="push-to-nuget">
+    <foreach item="File" property="filePath">
+      <in>
+        <items>
+          <include name="Dist\VsDebugFx.*.nupkg" />
+        </items>
+      </in>
+      <do>
+        <echo message="Pushing ${filePath} to NuGet." />
+        <exec program="${nuget.path}">
+          <arg value="push" />
+          <arg value="${filePath}" />
+        </exec>
+      </do>
+    </foreach>
   </target>
   
   <target name="all">
