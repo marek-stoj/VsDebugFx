@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="VsDebugFx" default="all">
+
+  <property name="vsdebugfx.version" value="1.0.0.0" />
+  <property name="msbuild.path" value="C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" />
+  <property name="git.path" value="C:\Program Files (x86)\Git\bin\git.exe" />
+  <property name="nuget.path" value="C:\Programs\NuGet\NuGet.exe" />
+
+  <echo message="Current VsDebugFx version is ${vsdebugfx.version}." />
+
+  <target name="expand-templates">
+    <echo message="Expanding AssemblyInfo.cs templates." />
+    <foreach item="File" property="filePath">
+      <in>
+        <items>
+          <include name="Src\**\AssemblyInfo.cs.template" />
+        </items>
+      </in>
+      <do>
+        <echo message="Expanding template ${filePath}" />
+        <copy file="${filePath}" tofile="${path::combine(path::get-directory-name(filePath), 'AssemblyInfo.cs')}" overwrite="true">
+          <filterchain>
+            <replacetokens>
+              <token key="VsDebugFxVersion" value="${VsDebugFx.version}" />
+            </replacetokens>
+          </filterchain>
+        </copy>
+      </do>
+    </foreach>
+  </target>
+  
+  <target name="build" depends="expand-templates">
+    <exec program="${msbuild.path}">
+      <arg value="Src\VsDebugFx.sln" />
+      <arg value="/t:Build" />
+      <arg value="/p:Configuration=Release" />
+      <arg value="/p:Platform=Any CPU" />
+    </exec>
+  </target>
+
+  <target name="test" depends="build">
+    <exec program="Tools\NUnit\nunit-console.exe">
+      <arg value="Tests\VsDebugFx.Tests.dll" />
+      <arg value="/xml=Tests\TestsResults.xml" />
+    </exec>
+  </target>
+
+  <target name="dist" depends="build test">
+    <delete dir="Dist" />
+    <copy todir="Dist">
+      <fileset basedir="Bin">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+    <copy file="Bin\VsDebugFx.dll" todir="Dist" />
+    <call target="package" />
+  </target>
+  
+  <target name="package">
+    <!-- Package binary. -->
+    <property name="bin.zip.dir" value="VsDebugFx-${vsdebugfx.version}" />
+    <zip zipfile="Dist\${bin.zip.dir}.zip">
+      <fileset basedir="Dist" prefix="${bin.zip.dir}">
+        <include name="**\*" />
+        <exclude name="VsDebugFx-*.zip" />
+      </fileset>
+    </zip>
+    <!-- Package source. -->
+    <property name="src.zip.dir" value="VsDebugFx-${vsdebugfx.version}-Src" />
+    <echo message="Archiving repository." />
+    <exec program="${git.path}">
+      <arg value="archive" />
+      <arg value="--format=zip" />
+      <arg value="--output" />
+      <arg value="Dist\${src.zip.dir}.zip" />
+      <arg value="master" />
+    </exec>
+    <!-- Create NuGet package. -->
+    <exec program="${nuget.path}">
+      <arg value="pack" />
+      <arg value="VsDebugFx.nuspec" />
+      <arg value="-OutputDirectory" />
+      <arg value="Dist" />
+    </exec>
+    <!-- Clean up. -->
+    <delete>
+      <fileset basedir="Dist">
+        <include name="**\*" />
+        <exclude name="${bin.zip.dir}.zip" />
+        <exclude name="${src.zip.dir}.zip" />
+        <exclude name="*.nupkg" />
+      </fileset>
+    </delete>
+  </target>
+  
+  <target name="clean">
+    <delete dir="Bin" />
+    <delete dir="Tests" />
+    <delete dir="Dist" />
+  </target>
+  
+  <target name="all">
+    <call target="dist" />
+  </target>
+
+</project>

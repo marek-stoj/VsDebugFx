@@ -3,3 +3,7 @@ bin
 obj
 *.DotSettings.user
 _ReSharper.VsDebugFx
+Bin
+Dist
+Tests
+/VsDebugFx.sln - Shortcut.lnk

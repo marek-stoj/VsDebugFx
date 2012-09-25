@@ -1,4 +1,4 @@
 VsDebugFx
 =========
 
-Weakly typed lambda expressions in Visual Studio debugger watches.
+Weakly typed lambda expressions and LINQ in Visual Studio debugger watches.
