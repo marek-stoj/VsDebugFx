@@ -5,8 +5,8 @@ Ever got one of these messages in Visual Studio while debugging?
 
  - "Expression cannot contain lambda expressions"
  - "Expression cannot contain anonymous types"
- - "Expression cannot contain implicitly-typed arrays"
  - "Expression cannot contain query expressions"
+ - "Expression cannot contain implicitly-typed arrays"
  
 Even though there are perfectly valid reasons why we're not allowed to use some of the
 nicest features of C# during debugging (see [this][reasons-1] and [this][reasons-2]),
