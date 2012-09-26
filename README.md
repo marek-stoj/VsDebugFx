@@ -64,7 +64,7 @@ Usage
     Uninstall-Package VsDebugFx -RemoveDependencies
     ```
 
-Supported extensions
+Supported expressions
 --------------------
 
 Below are couple of sample expressions that you can use with VsDebugFx. If you want the complete list
