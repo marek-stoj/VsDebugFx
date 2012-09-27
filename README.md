@@ -16,12 +16,13 @@ VsDebugFx is a project that aims to bring back those features by working around 
 limitations of the IDE, albeit it does so in a weakly-typed manner. What this means
 is that, while you're debugging, you can evaluate expressions like these:
 
-    ```csharp
-    items.WhereFx("x => x.Prop > 100")
-    items.SelectFx("x => new { x.Prop }", 0)
-    DebugFx.Run("new[] { 1, 2, 3 }")
-    DebuFx.Run("from x in Enumerable.Range(1, 3) select x")
-    ```
+```csharp
+items.WhereFx("x => x.Prop > 100")
+items.SelectFx("x => new { x.Prop }", 0)
+DebugFx.Run("new[] { 1, 2, 3 }")
+DebuFx.Run("from x in Enumerable.Range(1, 3) select x")
+```
+
 How is this possible? It's thanks to [Microsoft Roslyn][roslyn] - a set of APIs for exposing
 C# and VB.NET compilers as services available at runtime. Roslyn is a project I've been
 meaning to take a look at for a while now and VsDebugFx is an attempt to make something
